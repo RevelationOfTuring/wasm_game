@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev":"webpack-dev-server",
-    "build":"webpack build",
+    "dev": "webpack-dev-server",
+    "build": "webpack build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
