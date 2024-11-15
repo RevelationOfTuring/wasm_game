@@ -1,14 +1,14 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+// wasm_bindgen用于js与rust交互
+use wasm_bindgen::prelude::*;
+
+// 从外部将js的alert方法import进来，这样wasm就可以在内部使用alert方法了
+#[wasm_bindgen]
+extern "C" {
+    pub fn alert(s: &str);
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+#[wasm_bindgen] // 被wasm_bindgen修饰的方法才会被编译器认作是用于wasm的
+pub fn hello(name: &str) {
+    // alert为js的方法
+    alert(name);
 }
