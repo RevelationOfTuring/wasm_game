@@ -2,11 +2,22 @@ const path = require('path');
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
-    entry: "./index.js",
+    entry: './bootstrap.js',
+    module: {
+        rules: [
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
+            },
+        ],
+    },
+    resolve: {
+        extensions: ['.tsx', '.ts', '.js'],
+    },
     output: {
-        path: path.resolve(__dirname, "public"),
-        // filename: "index.js",
-        filename: "bootstrap.js",
+        filename: 'bootstrap.js',
+        path: path.resolve(__dirname, 'public'),
     },
     mode: "development",
     plugins: [
@@ -14,4 +25,4 @@ module.exports = {
             patterns: [{ from: "./index.html", to: "./" }],
         }),
     ],
-}
+};
