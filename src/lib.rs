@@ -18,3 +18,27 @@ pub fn hello(name: &str) {
     // alert为js的方法
     alert(name);
 }
+
+#[wasm_bindgen]
+struct World {
+    // 画布宽度
+    width: usize,
+    // 画布里有多少个格子
+    size: usize,
+}
+
+#[wasm_bindgen]
+impl World {
+    pub fn new(width: usize) -> Self {
+        Self {
+            width,
+            size: width * width,
+        }
+    }
+
+    pub fn width(&self) -> usize {
+        self.width
+    }
+}
+
+// 注：每次改完rust代码都要 wasm-pack build生成wasm文件，这样js才可以调用到
