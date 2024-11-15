@@ -25,6 +25,8 @@ struct World {
     width: usize,
     // 画布里有多少个格子
     size: usize,
+    // 内嵌的蛇
+    snake: Snake,
 }
 
 #[wasm_bindgen]
@@ -33,11 +35,38 @@ impl World {
         Self {
             width,
             size: width * width,
+            snake: Snake::new(13),
         }
     }
 
     pub fn width(&self) -> usize {
         self.width
+    }
+
+    // 蛇头的坐标
+    pub fn snake_head_index(&self) -> usize {
+        self.snake.body[0].0
+    }
+
+    // 更新蛇头位置
+    pub fn update(&mut self) {
+        let head_index = self.snake_head_index();
+        self.snake.body[0].0 = (head_index + 1) % self.size;
+    }
+}
+
+struct SnakeCell(usize);
+
+struct Snake {
+    body: Vec<SnakeCell>,
+}
+
+impl Snake {
+    // 参数：出生点
+    fn new(spawn_index: usize) -> Self {
+        Self {
+            body: vec![SnakeCell(spawn_index)],
+        }
     }
 }
 
