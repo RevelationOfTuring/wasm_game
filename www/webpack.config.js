@@ -5,7 +5,8 @@ module.exports = {
     entry: "./index.js",
     output: {
         path: path.resolve(__dirname, "public"),
-        filename: "index.js",
+        // filename: "index.js",
+        filename: "bootstrap.js",
     },
     mode: "development",
     plugins: [
