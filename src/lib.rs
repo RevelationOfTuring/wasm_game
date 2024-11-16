@@ -7,6 +7,11 @@ use wee_alloc::WeeAlloc;
 #[global_allocator]
 static ALLOC: WeeAlloc = WeeAlloc::INIT;
 
+// 使用js提供的生成随机数的方法getRand(max)，module后面的字符串为getRand所在js的module路径
+#[wasm_bindgen(module = "/www/utils/random.js")]
+extern "C" {
+    fn getRand(max: usize) -> usize;
+}
 // 从外部将js的alert方法import进来，这样wasm就可以在内部使用alert方法了
 #[wasm_bindgen]
 extern "C" {
@@ -27,16 +32,29 @@ struct World {
     size: usize,
     // 内嵌的蛇
     snake: Snake,
+    // 蛋的坐标
+    reward_cell: usize,
 }
 
 #[wasm_bindgen]
 impl World {
     pub fn new(width: usize, spawn_index: usize) -> Self {
+        let size = width * width;
         Self {
             width,
-            size: width * width,
+            size,
             snake: Snake::new(spawn_index),
+            reward_cell: Self::gen_reward_cell(size),
         }
+    }
+
+    fn gen_reward_cell(max: usize) -> usize {
+        // 使用js中提供的getRand()函数
+        getRand(max)
+    }
+
+    pub fn reward_cell(&self) -> usize {
+        self.reward_cell
     }
 
     pub fn width(&self) -> usize {

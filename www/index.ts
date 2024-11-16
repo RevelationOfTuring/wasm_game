@@ -1,11 +1,12 @@
 import init, { World, Direction } from "wasm_game";
+import { getRand } from './utils/random';
 
 // 必须先init，然后在其回调中调用wasm中定义的函数hello
 init().then(() => {
   const fps = 5 // fps即每秒帧数，即蛇头的移动速度
   const CELL_SIZE = 20; // 一个小正方形的格的边长
   const WORLD_WIDTH = 16; // 画布每边有16个小方格
-  const SNAKE_SPWAN_INDEX = Date.now() % (WORLD_WIDTH * WORLD_WIDTH); // 蛇的出生位置随机
+  const SNAKE_SPWAN_INDEX = getRand(WORLD_WIDTH * WORLD_WIDTH); // 蛇的出生位置随机
   const world = World.new(WORLD_WIDTH, SNAKE_SPWAN_INDEX);
   const worldWidth = world.width();
 
@@ -58,9 +59,36 @@ init().then(() => {
     // 蛇头在第几行（即y坐标）
     const col = Math.floor(snake_index / worldWidth);
 
+    context.beginPath();
+    // 设置蛇的颜色（黑）
+    context.fillStyle = "#000000";
+    // 画蛇头矩形
+    context.fillRect(
+      // 起点横坐标
+      row * CELL_SIZE,
+      // 起点纵坐标
+      col * CELL_SIZE,
+      // 矩形横长
+      CELL_SIZE,
+      // 矩形竖高
+      CELL_SIZE,
+    );
+    context.stroke();
+  }
+
+  // 画蛋
+  function drawReward() {
+    const index = world.reward_cell();
+    // 蛋在第几列（即x坐标）
+    const row = index % worldWidth;
+
+    // 蛋在第几行（即y坐标）
+    const col = Math.floor(index / worldWidth);
 
     context.beginPath();
-    // 画蛇头矩形
+    // 设置蛋的颜色（红）
+    context.fillStyle = "#FF0000";
+    // 画蛋矩形
     context.fillRect(
       // 起点横坐标
       row * CELL_SIZE,
@@ -77,6 +105,7 @@ init().then(() => {
   function drawWorldAndSnake() {
     drawWorld();
     drawSnake();
+    drawReward();
   }
 
   function run() {
