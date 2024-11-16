@@ -40,10 +40,12 @@ struct World {
 impl World {
     pub fn new(width: usize, spawn_index: usize) -> Self {
         let size = width * width;
+        // spawn_index为蛇头坐标，3表示蛇的长度，即2个身体+1个头
+        let snake = Snake::new(spawn_index, 3);
         Self {
             width,
             size,
-            snake: Snake::new(spawn_index),
+            snake,
             reward_cell: Self::gen_reward_cell(size),
         }
     }
@@ -102,6 +104,16 @@ impl World {
     fn cell_to_index(&self, col: usize, row: usize) -> usize {
         row * self.width + col
     }
+
+    // 返回一个SnakeCell的rust原生指针
+    pub fn snake_cells(&self) -> *const SnakeCell {
+        self.snake.body.as_ptr()
+    }
+
+    // 返回蛇身的长度
+    pub fn snake_length(&self)->usize{
+        self.snake.body.len()
+    }
 }
 
 struct SnakeCell(usize);
@@ -113,9 +125,13 @@ struct Snake {
 
 impl Snake {
     // 参数：出生点
-    fn new(spawn_index: usize) -> Self {
+    fn new(spawn_index: usize, size: usize) -> Self {
+        let mut body = Vec::new();
+        for i in 0..size {
+            body.push(SnakeCell(spawn_index - i));
+        }
         Self {
-            body: vec![SnakeCell(spawn_index)],
+            body,
             direction: Direction::Down, // 默认一开始向下
         }
     }

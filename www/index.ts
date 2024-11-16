@@ -2,7 +2,7 @@ import init, { World, Direction } from "wasm_game";
 import { getRand } from './utils/random';
 
 // 必须先init，然后在其回调中调用wasm中定义的函数hello
-init().then(() => {
+init().then(wasm => {
   const fps = 5 // fps即每秒帧数，即蛇头的移动速度
   const CELL_SIZE = 20; // 一个小正方形的格的边长
   const WORLD_WIDTH = 16; // 画布每边有16个小方格
@@ -52,27 +52,38 @@ init().then(() => {
   }
 
   function drawSnake() {
-    const snake_index = world.snake_head_index();
-    // 蛇头在第几列（即x坐标）
-    const row = snake_index % worldWidth;
+    // 获取蛇身子的坐标数组
+    const snakeCells = new Uint32Array(
+      wasm.memory.buffer, // wasm里面自带的memory buffer
+      world.snake_cells(), // wasm中蛇身子数组的起始指针
+      world.snake_length()  // wasm中蛇身子数组的长度
+    );
 
-    // 蛇头在第几行（即y坐标）
-    const col = Math.floor(snake_index / worldWidth);
 
     context.beginPath();
-    // 设置蛇的颜色（黑）
-    context.fillStyle = "#000000";
-    // 画蛇头矩形
-    context.fillRect(
-      // 起点横坐标
-      row * CELL_SIZE,
-      // 起点纵坐标
-      col * CELL_SIZE,
-      // 矩形横长
-      CELL_SIZE,
-      // 矩形竖高
-      CELL_SIZE,
-    );
+
+    // cellIndex为迭代出的蛇身的每一个坐标，i为该元素在wasm蛇身坐标数组中的索引
+    snakeCells.forEach((cellIndex, i) => {
+      // x坐标
+      const row = cellIndex % worldWidth;
+      // y坐标
+      const col = Math.floor(cellIndex / worldWidth);
+
+      // 设置蛇的颜色（头是灰色，身子是黑色）
+      context.fillStyle = i !== 0 ? "#000000" : "#787878";
+      // 画蛇身矩形
+      context.fillRect(
+        // 起点横坐标
+        row * CELL_SIZE,
+        // 起点纵坐标
+        col * CELL_SIZE,
+        // 矩形横长
+        CELL_SIZE,
+        // 矩形竖高
+        CELL_SIZE,
+      );
+    })
+
     context.stroke();
   }
 
