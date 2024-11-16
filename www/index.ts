@@ -1,16 +1,36 @@
-import init, { World } from "wasm_game";
+import init, { World, Direction } from "wasm_game";
 
 // 必须先init，然后在其回调中调用wasm中定义的函数hello
 init().then(() => {
-  const fps = 10 // fps即每秒帧数，即蛇头的移动速度
+  const fps = 5 // fps即每秒帧数，即蛇头的移动速度
   const CELL_SIZE = 20; // 一个小正方形的格的边长
-  const world = World.new(16); // 画布每边有16个小方格
+  const WORLD_WIDTH = 16; // 画布每边有16个小方格
+  const SNAKE_SPWAN_INDEX = Date.now() % (WORLD_WIDTH * WORLD_WIDTH); // 蛇的出生位置随机
+  const world = World.new(WORLD_WIDTH, SNAKE_SPWAN_INDEX);
   const worldWidth = world.width();
 
   const canvas = <HTMLCanvasElement>document.getElementById("snake-world"); // <HTMLCanvasElement>为ts语法
   const context = canvas.getContext("2d");
   canvas.width = worldWidth * CELL_SIZE;
   canvas.height = worldWidth * CELL_SIZE;
+
+  // 监听键盘发出的事件
+  document.addEventListener("keydown", e => {
+    switch (e.code) {
+      case "ArrowUp":
+        world.change_snake_direction(Direction.Up);
+        break;
+      case "ArrowDown":
+        world.change_snake_direction(Direction.Down);
+        break;
+      case "ArrowLeft":
+        world.change_snake_direction(Direction.Left);
+        break;
+      case "ArrowRight":
+        world.change_snake_direction(Direction.Right);
+        break;
+    }
+  })
 
   // 绘制画布
   function drawWorld() {
@@ -69,7 +89,7 @@ init().then(() => {
         canvas.height
       );
 
-      // 更新蛇身子
+      // 更新蛇头
       world.update();
       // 重新画画布和蛇
       drawWorldAndSnake();

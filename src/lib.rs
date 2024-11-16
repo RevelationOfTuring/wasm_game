@@ -31,11 +31,11 @@ struct World {
 
 #[wasm_bindgen]
 impl World {
-    pub fn new(width: usize) -> Self {
+    pub fn new(width: usize, spawn_index: usize) -> Self {
         Self {
             width,
             size: width * width,
-            snake: Snake::new(13),
+            snake: Snake::new(spawn_index),
         }
     }
 
@@ -50,8 +50,39 @@ impl World {
 
     // 更新蛇头位置
     pub fn update(&mut self) {
-        let head_index = self.snake_head_index();
-        self.snake.body[0].0 = (head_index + 1) % self.size;
+        let mut head_index = self.snake_head_index();
+        let (col, row) = self.index_to_cell(head_index);
+        // 获得移动后的行列新坐标
+        let (col, row) = match self.snake.direction {
+            Direction::Left => ((col - 1) % self.width, row),
+            Direction::Right => ((col + 1) % self.width, row),
+            Direction::Down => (col, (row + 1) % self.width),
+            Direction::Up => (col, (row - 1) % self.width),
+        };
+
+        // 由新坐标获得蛇头的index
+        head_index = self.cell_to_index(col, row);
+        // 设置蛇头的新index
+        self.set_snake_head(head_index);
+    }
+
+    fn set_snake_head(&mut self, index: usize) {
+        self.snake.body[0].0 = index;
+    }
+
+    // 改变蛇头的移动方向
+    pub fn change_snake_direction(&mut self, direction: Direction) {
+        self.snake.direction = direction;
+    }
+
+    // 传入一个蛇头的index返回其在画布中的行列坐标
+    fn index_to_cell(&self, index: usize) -> (usize, usize) {
+        (index % self.width, index / self.width)
+    }
+
+    // 传入一个蛇头在画布中的行列坐标返回其index
+    fn cell_to_index(&self, col: usize, row: usize) -> usize {
+        row * self.width + col
     }
 }
 
@@ -59,6 +90,7 @@ struct SnakeCell(usize);
 
 struct Snake {
     body: Vec<SnakeCell>,
+    direction: Direction,
 }
 
 impl Snake {
@@ -66,8 +98,19 @@ impl Snake {
     fn new(spawn_index: usize) -> Self {
         Self {
             body: vec![SnakeCell(spawn_index)],
+            direction: Direction::Down, // 默认一开始向下
         }
     }
+}
+
+// 方向是js传进来的，所以要用wasm_bingen修饰
+#[wasm_bindgen]
+#[derive(PartialEq)] // 因为需要比较判断方向，所以要derive PartialEq
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
 }
 
 // 注：每次改完rust代码都要 wasm-pack build生成wasm文件，这样js才可以调用到
