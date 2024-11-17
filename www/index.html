@@ -6,6 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
+        .flex {
+            display: flex;
+        }
+
+        .label {
+            font-weight: bold;
+            margin-right: 13px;
+        }
+
+        .game-content {
+            margin-bottom: 20px;
+        }
+
         .content-wrapper {
             top: 0;
             left: 0;
@@ -22,6 +35,21 @@
 
 <body>
     <div class="content-wrapper">
+        <div class="game-content">
+            <div class="flex">
+                <div class="lable">
+                    Status:
+                </div>
+                <div id="game-status">
+                    None
+                </div>
+            </div>
+            <div class="flex">
+                <button id="game-control-button">
+                    Start Game
+                </button>
+            </div>
+        </div>
         <canvas id="snake-world"></canvas>
     </div>
     <script src="./bootstrap.js "></script>

@@ -4,16 +4,35 @@ import { getRand } from './utils/random';
 // 必须先init，然后在其回调中调用wasm中定义的函数hello
 init().then(wasm => {
   const fps = 5 // fps即每秒帧数，即蛇头的移动速度
-  const CELL_SIZE = 20; // 一个小正方形的格的边长
+  const CELL_SIZE = 30; // 一个小正方形的格的边长
   const WORLD_WIDTH = 16; // 画布每边有16个小方格
   const SNAKE_SPWAN_INDEX = getRand(WORLD_WIDTH * WORLD_WIDTH); // 蛇的出生位置随机
   const world = World.new(WORLD_WIDTH, SNAKE_SPWAN_INDEX);
   const worldWidth = world.width();
 
+  // 
+  const gameStatus = document.getElementById("game-status");
+  const gameControlButton = document.getElementById("game-control-button");
+
   const canvas = <HTMLCanvasElement>document.getElementById("snake-world"); // <HTMLCanvasElement>为ts语法
   const context = canvas.getContext("2d");
   canvas.width = worldWidth * CELL_SIZE;
   canvas.height = worldWidth * CELL_SIZE;
+
+
+  // 给按钮添加点击事件
+  gameControlButton.addEventListener("click", () => {
+    const status = world.game_status();
+    if (status == undefined) {
+      // rust中的None就是js中的undefined
+      gameControlButton.textContent = "In the game ...";
+      world.start_game();
+      run();
+    } else {
+      // 重新刷新当前页面
+      location.reload();
+    }
+  })
 
   // 监听键盘发出的事件
   document.addEventListener("keydown", e => {
@@ -92,10 +111,10 @@ init().then(wasm => {
   // 画蛋
   function drawReward() {
     const index = world.reward_cell();
-    if (index === 123456789) {
-      // 如果单的index为123456789，表示蛇身子已经占满了全部格子，宣告胜利
-      alert("Win the game!");
-    }
+    // if (index === 123456789) {
+    //   // 如果单的index为123456789，表示蛇身子已经占满了全部格子，宣告胜利
+    //   alert("Win the game!");
+    // }
     // 蛋在第几列（即x坐标）
     const row = index % worldWidth;
 
@@ -119,10 +138,15 @@ init().then(wasm => {
     context.stroke();
   }
 
+  function displayGameStatusInfo() {
+    gameStatus.textContent = world.game_status_info();
+  }
+
   function drawWorldAndSnake() {
     drawWorld();
     drawSnake();
     drawReward();
+    displayGameStatusInfo();
   }
 
   function run() {
