@@ -34,6 +34,8 @@ struct World {
     snake: Snake,
     // 蛋的坐标
     reward_cell: usize,
+    // 下一个cell（用于 提高性能）
+    next_cell: Option<SnakeCell>,
 }
 
 #[wasm_bindgen]
@@ -45,14 +47,21 @@ impl World {
         Self {
             width,
             size,
+            reward_cell: Self::gen_reward_cell(size, &snake.body),
             snake,
-            reward_cell: Self::gen_reward_cell(size),
+            next_cell: None,
         }
     }
 
-    fn gen_reward_cell(max: usize) -> usize {
-        // 使用js中提供的getRand()函数
-        getRand(max)
+    fn gen_reward_cell(max: usize, body: &Vec<SnakeCell>) -> usize {
+        loop {
+            // 使用js中提供的getRand()函数
+            let reward_cell = getRand(max);
+            // 要求刚开始的蛋不能在蛇身子上
+            if !body.contains(&SnakeCell(reward_cell)) {
+                return reward_cell;
+            }
+        }
     }
 
     pub fn reward_cell(&self) -> usize {
@@ -70,40 +79,125 @@ impl World {
 
     // 更新蛇头位置
     pub fn update(&mut self) {
-        let mut head_index = self.snake_head_index();
-        let (col, row) = self.index_to_cell(head_index);
-        // 获得移动后的行列新坐标
-        let (col, row) = match self.snake.direction {
-            Direction::Left => ((col - 1) % self.width, row),
-            Direction::Right => ((col + 1) % self.width, row),
-            Direction::Down => (col, (row + 1) % self.width),
-            Direction::Up => (col, (row - 1) % self.width),
+        // let mut head_index = self.snake_head_index();
+        // let (col, row) = self.index_to_cell(head_index);
+        // // 获得移动后的行列新坐标
+        // let (col, row) = match self.snake.direction {
+        //     Direction::Left => ((col - 1) % self.width, row),
+        //     Direction::Right => ((col + 1) % self.width, row),
+        //     Direction::Down => (col, (row + 1) % self.width),
+        //     Direction::Up => (col, (row - 1) % self.width),
+        // };
+
+        // // 由新坐标获得蛇头的index
+        // head_index = self.cell_to_index(col, row);
+        // // 设置蛇头的新index
+        // self.set_snake_head(head_index);
+
+        // 复制当前的蛇坐标数组
+        let temp_body = self.snake.body.clone();
+        match &self.next_cell {
+            Some(next_cell) => {
+                // 如果self.next_cell存在，说明之前刚刚触发过change_snake_direction
+                // 设置蛇头为下一个cell
+                self.snake.body[0] = next_cell.clone();
+                // 清空self.next_cell
+                self.next_cell = None;
+            }
+            None => {
+                // 如果self.next_cell不存在，说明之前没有触发过change_snake_direction
+                // 获得下一个cell
+                self.snake.body[0] = self.gen_snake_next_cell(&self.snake.direction);
+            }
         };
 
-        // 由新坐标获得蛇头的index
-        head_index = self.cell_to_index(col, row);
-        // 设置蛇头的新index
-        self.set_snake_head(head_index);
+        for i in 1..self.snake_length() {
+            // 将原来身子中[0,n-2]的元素复制到现在的蛇头后面
+            self.snake.body[i] = SnakeCell(temp_body[i - 1].0);
+        }
     }
 
-    fn set_snake_head(&mut self, index: usize) {
-        self.snake.body[0].0 = index;
+    fn gen_snake_next_cell(&self, direction: &Direction) -> SnakeCell {
+        let snake_head_index = self.snake_head_index();
+        let row = snake_head_index / self.width;
+        return match direction {
+            Direction::Up => {
+                // 如果是向上的话
+                // 计算当前蛇头位置对应的上边界的点坐标
+                let up_border_index = snake_head_index - row * self.width;
+                if up_border_index == snake_head_index {
+                    // 如果当前蛇头就在上边缘，那么下次应该从同一列的最下面出来
+                    SnakeCell(self.size - self.width + up_border_index)
+                } else {
+                    // 如果当前蛇头不在上边缘，蛇头向上走一格
+                    SnakeCell(snake_head_index - self.width)
+                }
+            }
+            Direction::Down => {
+                // 如果是向下的话
+                // 计算当前蛇头位置对应的下边界的点坐标
+                let down_border_index = snake_head_index + (self.width - row - 1) * self.width;
+                if down_border_index == snake_head_index {
+                    // 如果当前蛇头就在下边缘，那么下次应该从同一列的最上面出来
+                    SnakeCell(self.width - (self.size - down_border_index))
+                } else {
+                    // 如果当前蛇头不在下边缘，蛇头向下走一格
+                    SnakeCell(snake_head_index + self.width)
+                }
+            }
+            Direction::Left => {
+                // 如果是向左的话
+                // 计算当前蛇头位置对应的左边界的点坐标
+                let left_border_index = row * self.width;
+                if left_border_index == snake_head_index {
+                    // 如果当前蛇头就在左边缘，那么下次应该从同一列的最右面出来
+                    SnakeCell(left_border_index + self.width - 1)
+                } else {
+                    // 如果当前蛇头不在左边缘，蛇头向左走一格
+                    SnakeCell(snake_head_index - 1)
+                }
+            }
+            Direction::Right => {
+                // 如果是向右的话
+                // 计算当前蛇头位置对应的右边界的点坐标
+                let right_border_index = (row + 1) * self.width - 1;
+                if right_border_index == snake_head_index {
+                    // 如果当前蛇头就在右边缘，那么下次应该从同一列的最左面出来
+                    SnakeCell(row * self.width)
+                } else {
+                    // 如果当前蛇头不在右边缘，蛇头向右走一格
+                    SnakeCell(snake_head_index + 1)
+                }
+            }
+        };
     }
+
+    // fn set_snake_head(&mut self, index: usize) {
+    //     self.snake.body[0].0 = index;
+    // }
 
     // 改变蛇头的移动方向
     pub fn change_snake_direction(&mut self, direction: Direction) {
+        // 如果当前的方向是a，不可立刻改变为a相反的方向
+        let next_cell = self.gen_snake_next_cell(&direction);
+        if next_cell == self.snake.body[1] {
+            return;
+        }
+
         self.snake.direction = direction;
+        // 记录下一个位置的cell，为了提高wasm的性能（再执行update时，并不需要重新调用gen_snake_next_cell()计算）
+        self.next_cell = Some(next_cell);
     }
 
-    // 传入一个蛇头的index返回其在画布中的行列坐标
-    fn index_to_cell(&self, index: usize) -> (usize, usize) {
-        (index % self.width, index / self.width)
-    }
+    // // 传入一个蛇头的index返回其在画布中的行列坐标
+    // fn index_to_cell(&self, index: usize) -> (usize, usize) {
+    //     (index % self.width, index / self.width)
+    // }
 
-    // 传入一个蛇头在画布中的行列坐标返回其index
-    fn cell_to_index(&self, col: usize, row: usize) -> usize {
-        row * self.width + col
-    }
+    // // 传入一个蛇头在画布中的行列坐标返回其index
+    // fn cell_to_index(&self, col: usize, row: usize) -> usize {
+    //     row * self.width + col
+    // }
 
     // 返回一个SnakeCell的rust原生指针
     pub fn snake_cells(&self) -> *const SnakeCell {
@@ -111,11 +205,12 @@ impl World {
     }
 
     // 返回蛇身的长度
-    pub fn snake_length(&self)->usize{
+    pub fn snake_length(&self) -> usize {
         self.snake.body.len()
     }
 }
 
+#[derive(Clone, PartialEq)]
 struct SnakeCell(usize);
 
 struct Snake {
