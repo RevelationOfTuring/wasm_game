@@ -62,6 +62,8 @@ init().then(wasm => {
 
     context.beginPath();
 
+    console.log(snakeCells.length, snakeCells);
+
     // cellIndex为迭代出的蛇身的每一个坐标，i为该元素在wasm蛇身坐标数组中的索引
     snakeCells.forEach((cellIndex, i) => {
       // x坐标
@@ -90,6 +92,10 @@ init().then(wasm => {
   // 画蛋
   function drawReward() {
     const index = world.reward_cell();
+    if (index === 123456789) {
+      // 如果单的index为123456789，表示蛇身子已经占满了全部格子，宣告胜利
+      alert("Win the game!");
+    }
     // 蛋在第几列（即x坐标）
     const row = index % worldWidth;
 

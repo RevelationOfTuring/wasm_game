@@ -111,9 +111,23 @@ impl World {
             }
         };
 
-        for i in 1..self.snake_length() {
+        let len: usize = self.snake_length();
+        for i in 1..len {
             // 将原来身子中[0,n-2]的元素复制到现在的蛇头后面
             self.snake.body[i] = SnakeCell(temp_body[i - 1].0);
+        }
+
+        // 如果蛇头吃到蛋
+        if self.reward_cell == self.snake_head_index() {
+            if self.snake_length() < self.size {
+                // 更新新的蛋(要求此时蛇的长度不能将整个size填满)
+                self.reward_cell = Self::gen_reward_cell(self.size, &self.snake.body);
+            } else {
+                // 如果此时蛇已经将size填满，我们给前端一个常量123456789作为游戏胜利的提示
+                self.reward_cell = 123456789;
+            }
+            // 蛇吃到果子，将原先自身最后一个cell也加入到body中，这样实现了身长的增加
+            self.snake.body.push(SnakeCell(temp_body[len - 1].0));
         }
     }
 
