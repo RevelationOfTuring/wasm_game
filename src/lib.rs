@@ -36,6 +36,8 @@ struct World {
     reward_cell: usize,
     // 下一个cell（用于 提高性能）
     next_cell: Option<SnakeCell>,
+    // 游戏当前状态
+    status: Option<GameStatus>,
 }
 
 #[wasm_bindgen]
@@ -50,6 +52,7 @@ impl World {
             reward_cell: Self::gen_reward_cell(size, &snake.body),
             snake,
             next_cell: None,
+            status: None,
         }
     }
 
@@ -222,6 +225,26 @@ impl World {
     pub fn snake_length(&self) -> usize {
         self.snake.body.len()
     }
+
+    // 查询游戏状态
+    pub fn game_status(&self) -> Option<GameStatus> {
+        self.status.clone()
+    }
+
+    // 开始游戏
+    pub fn start_game(&mut self) {
+        self.status = Some(GameStatus::Played);
+    }
+
+    // 返回游戏当前信息
+    pub fn game_status_info(&self) -> String {
+        match self.status {
+            None => "None game status",
+            Some(GameStatus::Won) => "You won the game",
+            Some(GameStatus::Lost) => "You lost the game",
+            Some(GameStatus::Played) => "You are playing the game",
+        }.to_string()
+    }
 }
 
 #[derive(Clone, PartialEq)]
@@ -248,12 +271,19 @@ impl Snake {
 
 // 方向是js传进来的，所以要用wasm_bingen修饰
 #[wasm_bindgen]
-#[derive(PartialEq)] // 因为需要比较判断方向，所以要derive PartialEq
 pub enum Direction {
     Up,
     Down,
     Left,
     Right,
+}
+
+#[wasm_bindgen]
+#[derive(Clone)]
+pub enum GameStatus {
+    Won,
+    Lost,
+    Played,
 }
 
 // 注：每次改完rust代码都要 wasm-pack build生成wasm文件，这样js才可以调用到
