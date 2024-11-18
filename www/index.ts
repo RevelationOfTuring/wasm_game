@@ -3,14 +3,13 @@ import { getRand } from './utils/random';
 
 // 必须先init，然后在其回调中调用wasm中定义的函数hello
 init().then(wasm => {
-  const fps = 2 // fps即每秒帧数，即蛇头的移动速度
+  const fps = 3 // fps即每秒帧数，即蛇头的移动速度
   const CELL_SIZE = 30; // 一个小正方形的格的边长
-  const WORLD_WIDTH = 4; // 画布每边有16个小方格
+  const WORLD_WIDTH = 10; // 画布每边有16个小方格
   const SNAKE_SPWAN_INDEX = getRand(WORLD_WIDTH * WORLD_WIDTH); // 蛇的出生位置随机
   const world = World.new(WORLD_WIDTH, SNAKE_SPWAN_INDEX);
   const worldWidth = world.width();
 
-  // 
   const gameStatus = document.getElementById("game-status");
   const gameControlButton = document.getElementById("game-control-button");
 
