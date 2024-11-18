@@ -33,7 +33,7 @@ struct World {
     // 内嵌的蛇
     snake: Snake,
     // 蛋的坐标
-    reward_cell: usize,
+    reward_cell: Option<usize>,
     // 下一个cell（用于 提高性能）
     next_cell: Option<SnakeCell>,
     // 游戏当前状态
@@ -49,7 +49,7 @@ impl World {
         Self {
             width,
             size,
-            reward_cell: Self::gen_reward_cell(size, &snake.body),
+            reward_cell: Some(Self::gen_reward_cell(size, &snake.body)),
             snake,
             next_cell: None,
             status: None,
@@ -67,7 +67,7 @@ impl World {
         }
     }
 
-    pub fn reward_cell(&self) -> usize {
+    pub fn reward_cell(&self) -> Option<usize> {
         self.reward_cell
     }
 
@@ -120,15 +120,23 @@ impl World {
             self.snake.body[i] = SnakeCell(temp_body[i - 1].0);
         }
 
+        // 如果蛇头撞到了蛇身子，游戏失败
+        let snake_head = self.snake_head_index();
+        if self.snake.body[1..len].contains(&SnakeCell(snake_head)) {
+            self.status = Some(GameStatus::Lost);
+            return;
+        }
+
         // 如果蛇头吃到蛋
-        if self.reward_cell == self.snake_head_index() {
+        if self.reward_cell == Some(self.snake_head_index()) {
             // 蛇吃到果子，将原先自身最后一个cell也加入到body中，这样实现了身长的增加
             self.snake.body.push(SnakeCell(temp_body[len - 1].0));
             if self.snake_length() != self.size {
                 // 更新新的蛋(要求此时蛇的长度不能将整个size填满)
-                self.reward_cell = Self::gen_reward_cell(self.size, &self.snake.body);
+                self.reward_cell = Some(Self::gen_reward_cell(self.size, &self.snake.body));
             } else {
                 // 如果此时蛇已经将size填满，游戏状态标记为Won
+                self.reward_cell = None;
                 self.status = Some(GameStatus::Won);
             }
         }

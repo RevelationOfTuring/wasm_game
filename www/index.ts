@@ -5,7 +5,7 @@ import { getRand } from './utils/random';
 init().then(wasm => {
   const fps = 2 // fps即每秒帧数，即蛇头的移动速度
   const CELL_SIZE = 30; // 一个小正方形的格的边长
-  const WORLD_WIDTH =4; // 画布每边有16个小方格
+  const WORLD_WIDTH = 4; // 画布每边有16个小方格
   const SNAKE_SPWAN_INDEX = getRand(WORLD_WIDTH * WORLD_WIDTH); // 蛇的出生位置随机
   const world = World.new(WORLD_WIDTH, SNAKE_SPWAN_INDEX);
   const worldWidth = world.width();
@@ -80,9 +80,13 @@ init().then(wasm => {
 
 
     context.beginPath();
+    const snakeHead = snakeCells[0];
 
     // cellIndex为迭代出的蛇身的每一个坐标，i为该元素在wasm蛇身坐标数组中的索引
-    snakeCells.forEach((cellIndex, i) => {
+    snakeCells.filter((cellIndex, i) =>
+      // 当蛇头撞到蛇身上时，不要在蛇头位置再渲染蛇身
+      !(i > 0 && cellIndex == snakeHead)
+    ).forEach((cellIndex, i) => {
       // x坐标
       const row = cellIndex % worldWidth;
       // y坐标
@@ -149,7 +153,7 @@ init().then(wasm => {
 
   function run() {
     const status = world.game_status();
-    gameControlButton.textContent = world.snake_length().toString();
+    // gameControlButton.textContent = world.snake_length().toString();
     if (status === GameStatus.Won || status === GameStatus.Lost) {
       // 如果游戏已经失败或成功，就停止游戏
       gameControlButton.textContent = "play again?";
