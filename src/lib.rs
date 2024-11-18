@@ -122,15 +122,15 @@ impl World {
 
         // 如果蛇头吃到蛋
         if self.reward_cell == self.snake_head_index() {
-            if self.snake_length() < self.size {
+            // 蛇吃到果子，将原先自身最后一个cell也加入到body中，这样实现了身长的增加
+            self.snake.body.push(SnakeCell(temp_body[len - 1].0));
+            if self.snake_length() != self.size {
                 // 更新新的蛋(要求此时蛇的长度不能将整个size填满)
                 self.reward_cell = Self::gen_reward_cell(self.size, &self.snake.body);
             } else {
-                // 如果此时蛇已经将size填满，我们给前端一个常量123456789作为游戏胜利的提示
-                self.reward_cell = 123456789;
+                // 如果此时蛇已经将size填满，游戏状态标记为Won
+                self.status = Some(GameStatus::Won);
             }
-            // 蛇吃到果子，将原先自身最后一个cell也加入到body中，这样实现了身长的增加
-            self.snake.body.push(SnakeCell(temp_body[len - 1].0));
         }
     }
 
@@ -243,7 +243,8 @@ impl World {
             Some(GameStatus::Won) => "You won the game",
             Some(GameStatus::Lost) => "You lost the game",
             Some(GameStatus::Played) => "You are playing the game",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 

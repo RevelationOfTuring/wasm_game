@@ -1,11 +1,11 @@
-import init, { World, Direction } from "wasm_game";
+import init, { World, Direction, GameStatus } from "wasm_game";
 import { getRand } from './utils/random';
 
 // 必须先init，然后在其回调中调用wasm中定义的函数hello
 init().then(wasm => {
-  const fps = 5 // fps即每秒帧数，即蛇头的移动速度
+  const fps = 2 // fps即每秒帧数，即蛇头的移动速度
   const CELL_SIZE = 30; // 一个小正方形的格的边长
-  const WORLD_WIDTH = 16; // 画布每边有16个小方格
+  const WORLD_WIDTH =4; // 画布每边有16个小方格
   const SNAKE_SPWAN_INDEX = getRand(WORLD_WIDTH * WORLD_WIDTH); // 蛇的出生位置随机
   const world = World.new(WORLD_WIDTH, SNAKE_SPWAN_INDEX);
   const worldWidth = world.width();
@@ -81,8 +81,6 @@ init().then(wasm => {
 
     context.beginPath();
 
-    console.log(snakeCells.length, snakeCells);
-
     // cellIndex为迭代出的蛇身的每一个坐标，i为该元素在wasm蛇身坐标数组中的索引
     snakeCells.forEach((cellIndex, i) => {
       // x坐标
@@ -150,6 +148,14 @@ init().then(wasm => {
   }
 
   function run() {
+    const status = world.game_status();
+    gameControlButton.textContent = world.snake_length().toString();
+    if (status === GameStatus.Won || status === GameStatus.Lost) {
+      // 如果游戏已经失败或成功，就停止游戏
+      gameControlButton.textContent = "play again?";
+      return;
+    }
+
     setTimeout(() => {
       // 清理画布和蛇
       context.clearRect(
@@ -169,5 +175,4 @@ init().then(wasm => {
   }
 
   drawWorldAndSnake();
-  run();
 })
